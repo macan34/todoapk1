@@ -980,13 +980,32 @@
                 return;
             }
 
+            currentUser = { name, role: 'mentor' };
+            
+            // Initialize peer if not already done
             if (!peer) {
                 initializePeer();
+                
+                // Wait for peer to be ready before setting room ID
+                peer.on('open', (id) => {
+                    roomId = id;
+                    setupMentorRoom(name, roomName);
+                });
+            } else if (peer.id) {
+                // Peer already ready
+                roomId = peer.id;
+                setupMentorRoom(name, roomName);
+            } else {
+                // Peer exists but not ready yet
+                peer.on('open', (id) => {
+                    roomId = id;
+                    setupMentorRoom(name, roomName);
+                });
             }
+        }
 
-            currentUser = { name, role: 'mentor' };
-            roomId = peer.id; // Use peer ID as room ID
-            
+        // Setup mentor room UI
+        function setupMentorRoom(name, roomName) {
             // Hide auth section and show todo container
             document.getElementById('authSection').classList.add('hidden');
             document.getElementById('todoContainer').classList.remove('hidden');
@@ -995,11 +1014,13 @@
             document.getElementById('todoTitle').textContent = `👨‍🏫 ${roomName} - Room`;
             document.getElementById('userInfo').textContent = `Mentor: ${name}`;
             document.getElementById('connectionInfo').classList.remove('hidden');
-            document.getElementById('displayRoomId').textContent = roomId;
+            document.getElementById('displayRoomId').textContent = roomId || 'Loading...';
+            document.getElementById('displayPeerId').textContent = roomId || 'Loading...';
             document.getElementById('addTodoForm').classList.remove('hidden');
             
             updateConnectionStatus(true);
             renderTodos();
+            showNotification('Room berhasil dibuat! Bagikan Room ID kepada member.', 'success');
         }
 
         // Join room (member)
